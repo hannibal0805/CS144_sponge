@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <memory>
+#include <array>    // For std::array
+
 #include <netdb.h>
 #include <stdexcept>
 #include <system_error>
@@ -97,7 +99,7 @@ pair<string, uint16_t> Address::ip_port() const {
         throw tagged_error(gai_error_category(), "getnameinfo", gni_ret);
     }
 
-    return {ip.data(), stoi(port.data())};
+    return {ip.data(), static_cast<uint16_t>(stoi(port.data()))};
 }
 
 string Address::to_string() const {
