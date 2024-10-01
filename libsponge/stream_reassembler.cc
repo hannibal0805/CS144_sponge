@@ -12,15 +12,49 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity), _capacity(capacity) {}
+StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity), _capacity(capacity),_un_reassembler_bytes_cnt(0),_cur_index(0),_eof_index(std::numeric_limits<size_t>::max()), _stream(capacity) {
+
+}
 
 //! \details This function accepts a substring (aka a segment) of bytes,
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
     DUMMY_CODE(data, index, eof);
+
+    size_t st = max(_cur_index,index);
+    // size_t end = min(_eof_index,index+data.size());
+    size_t end = min(index + data.size(), min(_cur_index + _capacity - _output.buffer_size(), _eof_index));
+    if(eof) _eof_index = min(index + data.size(),_eof_index);
+    for(size_t i = st, j = st - index; i < end; i++, j++){
+        auto& tmp = _stream[i ];
+        if(tmp.second == false){
+            printf("values: %c %zu\n",data[j],j);
+            tmp = make_pair(data[j],true);
+            ++_un_reassembler_bytes_cnt;
+        }else{
+            if (tmp.first != data[j])
+                throw runtime_error("StreamReassembler::push_substring: Inconsistent substrings!");
+        }
+    }
+
+    string str="";
+    while (_cur_index < _eof_index && _stream[_cur_index ].second == true ){
+        str.push_back(_stream[_cur_index ].first);
+        _stream[_cur_index ].second = false;
+        --_un_reassembler_bytes_cnt;
+
+        ++_cur_index;
+    }
+
+    _output.write(str);
+    if(_cur_index==_eof_index) {
+        _output.end_input();
+    }
+    
+
 }
 
-size_t StreamReassembler::unassembled_bytes() const { return {}; }
+size_t StreamReassembler::unassembled_bytes() const { return _un_reassembler_bytes_cnt; }
 
-bool StreamReassembler::empty() const { return {}; }
+bool StreamReassembler::empty() const { return unassembled_bytes() == 0; }

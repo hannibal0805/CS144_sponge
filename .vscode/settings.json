@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "limits": "cpp",
+        "stdexcept": "cpp",
+        "chrono": "cpp",
+        "span": "cpp",
+        "initializer_list": "cpp"
+    }
+}
