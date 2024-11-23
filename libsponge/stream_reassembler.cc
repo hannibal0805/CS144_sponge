@@ -25,10 +25,15 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     size_t st = max(_cur_index,index);
     // size_t end = min(_eof_index,index+data.size());
     size_t end = min(index + data.size(), min(_cur_index + _capacity - _output.buffer_size(), _eof_index));
+
+
+
     if(eof) _eof_index = min(index + data.size(),_eof_index);
+    
     for(size_t i = st, j = st - index; i < end; i++, j++){
-        auto& tmp = _stream[i ];
+        auto& tmp = _stream[i % _capacity];
         if(tmp.second == false){
+            printf("i: %zu j: %zu std: %zu end: %zu _cur_index: %zu _eof_index:%zu _capacity:%zu\n",i,j,st,end,_cur_index,_eof_index,_capacity);
             printf("values: %c %zu\n",data[j],j);
             tmp = make_pair(data[j],true);
             ++_un_reassembler_bytes_cnt;
@@ -39,9 +44,9 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     }
 
     string str="";
-    while (_cur_index < _eof_index && _stream[_cur_index ].second == true ){
-        str.push_back(_stream[_cur_index ].first);
-        _stream[_cur_index ].second = false;
+    while (_cur_index < _eof_index && _stream[_cur_index % _capacity].second == true ){
+        str.push_back(_stream[_cur_index % _capacity].first);
+        _stream[_cur_index % _capacity].second = false;
         --_un_reassembler_bytes_cnt;
 
         ++_cur_index;
